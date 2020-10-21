@@ -6,15 +6,17 @@ By writing my name below and submitting this file, I/we declare that
 all additions to the provided skeleton file are my/our own work, and that
 I/we have not seen any work on this assignment by another student/group.
 
-Student name(s):
-Student ID(s):
+Student name(s): Yashitha Agarwal, Morgan Reilly, Akanksha
+Student ID(s): 20230091, 20235398, 20231242
 
 """
 
 import numpy as np
 import sympy
 import itertools
+import decimal
 import math
+
 
 def numint_py(f, a, b, n):
     """Numerical integration. For a function f, calculate the definite
@@ -29,9 +31,23 @@ def numint_py(f, a, b, n):
     4.64746
 
     """
+
     A = 0
-    w = (b - a) / n # width of one slice
-    # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
+    w = (b - a) / n  # width of one slice
+
+    def f_input(x1, x2, width):
+        while x1 < x2:
+            yield float(x1)
+            x1 += decimal.Decimal(w)
+
+    x = list(f_input(a, b, str(w)))
+
+    for i in x:
+        y = f(i)
+        A += y * w
+
+    return A
+
 
 def numint(f, a, b, n, scheme='mp'):
     """Numerical integration. For a function f, calculate the definite
@@ -51,7 +67,30 @@ def numint(f, a, b, n, scheme='mp'):
     4.69417
 
     """
+
     # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
+    A = 0
+    w = (b - a) / n  # width of one slice
+    x = np.arange(a, b, w)
+
+    l = str(w)
+    d = str.split(l, '.')
+    dl = len(d[1])
+
+    for i in x:
+        if scheme == 'mp':
+            yl = np.round(f(i), dl)
+            yr = np.round(f(i + w), dl)
+            A += ((yl + yr) / 2) * w
+        elif scheme == 'lb':
+            y = f(i)
+            A += y * w
+        elif scheme == 'ub':
+            y = f(i + w)
+            A += y * w
+
+    return A
+
 
 def true_integral(fstr, a, b):
     """Using Sympy, calculate the definite integral of f from a to b and
@@ -72,10 +111,11 @@ def true_integral(fstr, a, b):
     """
     x = sympy.symbols("x")
     # make fsym, a Sympy expression in x, now using eg "sympy.sin"
-    fsym = eval(fstr.replace("np", "sympy")) 
-    A = sympy.integrate(fsym, (x, a, b)) # definite integral
-    A = float(A.evalf()) # convert to float
+    fsym = eval(fstr.replace("np", "sympy"))
+    A = sympy.integrate(fsym, (x, a, b))  # definite integral
+    A = float(A.evalf())  # convert to float
     return A
+
 
 def numint_err(fstr, a, b, n, scheme):
     """For a given function fstr and bounds a, b, evaluate the error
@@ -91,9 +131,16 @@ def numint_err(fstr, a, b, n, scheme):
     0.3333 0.0483 0.1450
 
     """
-    f = eval("lambda x: " + fstr) # f is a Python function
+    f = eval("lambda x: " + fstr)  # f is a Python function
     A = true_integral(fstr, a, b)
     # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
+
+    T = numint(f, a, b, n, scheme)
+    AE = abs(A - T)
+    RE = abs(AE / A)
+
+    return A, AE, RE
+
 
 def make_table(f_ab_s, ns, schemes):
     """For each function f with associated bounds (a, b), and each value
@@ -119,16 +166,33 @@ def make_table(f_ab_s, ns, schemes):
     np.sin(x),0.00,1.00,100,mp,0.4597,1.915e-06,4.167e-06
 
     """
-   
-    # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
+    funcs = []
+    # Use list comprehension to unzip list of tuples
+    for i in list(zip(*f_ab_s)):
+        funcs.append(i)
+
+    numpy_funcs = np.array(funcs)
+    transposed_funcs = numpy_funcs.T
+
+    transposed_funcs_list = transposed_funcs.tolist()
+
+    for i in transposed_funcs_list:
+        vals = numint_err(i[0], int(i[2]), ns, schemes)
+        print(vals)
+
+    for f_ab_s, ns, schemes in itertools.product(f_ab_s, ns, schemes):
+        print(f_ab_s, ns, schemes, numint_err(f_ab_s, ns, schemes))
+
 
 def main():
     """Call make_table() as specified in the pdf."""
     # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
 
+
 """
 STUDENTS REPLACE THIS TEXT WITH INTERPRETATION OF main() RESULTS
 """
+
 
 def numint_nd(f, a, b, n):
     """numint in any number of dimensions.
@@ -144,16 +208,15 @@ def numint_nd(f, a, b, n):
 
     # My implementation uses Numpy and the mid-point scheme, but you
     # are free to use pure Python and/or any other scheme if you prefer.
-    
+
     # Hint: calculate w, the step-size, per dimension
     w = [(bi - ai) / ni for (ai, bi, ni) in zip(a, b, n)]
 
     # STUDENTS ADD CODE FROM HERE TO END OF FUNCTION
 
 
-
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
     main()
-
